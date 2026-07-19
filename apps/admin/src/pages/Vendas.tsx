@@ -17,6 +17,8 @@ type FormState = {
   client_name: string
   client_phone: string
   client_gender: ClientGender | ''
+  client_age: string
+  client_city: string
   payment_method: string
   sale_date: string
   notes: string
@@ -30,6 +32,8 @@ const emptyForm: FormState = {
   client_name: '',
   client_phone: '',
   client_gender: '',
+  client_age: '',
+  client_city: '',
   payment_method: '',
   sale_date: today(),
   notes: '',
@@ -94,6 +98,8 @@ export function Vendas() {
       p_payment_method: form.payment_method.trim() || null,
       p_sale_date: form.sale_date || today(),
       p_notes: form.notes.trim() || null,
+      p_client_age: form.client_age ? Number(form.client_age) : null,
+      p_client_city: form.client_city.trim() || null,
     })
 
     setSaving(false)
@@ -160,6 +166,8 @@ export function Vendas() {
                   {sale.client_gender && sale.client_gender !== 'nao_informado'
                     ? ` · ${GENDER_LABEL[sale.client_gender]}`
                     : ''}
+                  {sale.client_age ? ` · ${sale.client_age} anos` : ''}
+                  {sale.client_city ? ` · ${sale.client_city}` : ''}
                   {sale.payment_method ? ` · ${sale.payment_method}` : ''}
                 </p>
               </div>
@@ -243,6 +251,29 @@ export function Vendas() {
                 <option value="feminino">Feminino</option>
                 <option value="masculino">Masculino</option>
               </select>
+            </label>
+
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink">Idade (opcional)</span>
+              <input
+                type="number"
+                min={0}
+                max={120}
+                value={form.client_age}
+                onChange={(e) => setForm({ ...form, client_age: e.target.value })}
+                placeholder="32"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-terracotta focus:outline-none"
+              />
+            </label>
+
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-ink">Cidade (opcional)</span>
+              <input
+                value={form.client_city}
+                onChange={(e) => setForm({ ...form, client_city: e.target.value })}
+                placeholder="São Paulo"
+                className="w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-terracotta focus:outline-none"
+              />
             </label>
 
             <label className="col-span-2 text-sm">

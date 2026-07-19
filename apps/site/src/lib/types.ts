@@ -1,8 +1,15 @@
+export interface HeroFeature {
+  icon: string
+  label: string
+}
+
 export interface HeroContent {
   badge: string
   title: string
   subtitle: string
   clients_badge: string
+  photo_url?: string | null
+  features?: HeroFeature[]
 }
 
 export interface StatsContent {

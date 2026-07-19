@@ -15,6 +15,27 @@
   --color-danger: #b3432f;
   --color-success: #4d7c4a;
 
+  /* Tokens dos gráficos do dashboard — paleta validada com o script
+     validate_palette.js da skill de dataviz (checks de contraste e CVD).
+     Receita/Lucro formam o par categórico validado; Custo fica como linha
+     de contexto (cinza neutro), não competindo por identidade com as
+     outras duas. A rampa "seq" é sequencial (uma hue só, claro→escuro),
+     usada em magnitude (heatmap de modelos, idade, cidade). */
+  --color-chart-receita: #c1662e;
+  --color-chart-lucro: #2a78d6;
+  --color-chart-custo: #6b6459;
+  --color-chart-seq-100: #cde2fb;
+  --color-chart-seq-200: #9ec5f4;
+  --color-chart-seq-300: #6da7ec;
+  --color-chart-seq-400: #3987e5;
+  --color-chart-seq-450: #2a78d6;
+  --color-chart-seq-500: #256abf;
+  --color-chart-seq-600: #184f95;
+  --color-chart-seq-700: #0d366b;
+  --color-chart-grid: #e1e0d9;
+  --color-chart-axis: #c3c2b7;
+  --color-chart-muted: #898781;
+
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
 }
 

@@ -10,6 +10,7 @@ export interface Device {
   cost_price: number
   imei: string | null
   status: DeviceStatus
+  photo_url: string | null
   created_at: string
   sold_at: string | null
 }
@@ -23,6 +24,8 @@ export interface Sale {
   client_name: string | null
   client_phone: string | null
   client_gender: ClientGender | null
+  client_age: number | null
+  client_city: string | null
   payment_method: string | null
   sale_date: string
   notes: string | null
@@ -51,11 +54,18 @@ export interface SiteModel {
   created_at: string
 }
 
+export interface HeroFeature {
+  icon: string
+  label: string
+}
+
 export interface HeroContent {
   badge: string
   title: string
   subtitle: string
   clients_badge: string
+  photo_url?: string | null
+  features?: HeroFeature[]
 }
 
 export interface StatsContent {

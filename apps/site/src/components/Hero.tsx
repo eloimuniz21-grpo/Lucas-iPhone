@@ -1,9 +1,16 @@
 import { useHeroContent } from '../lib/hooks'
 import { getWhatsAppLink } from '../lib/whatsapp'
 
+const DEFAULT_FEATURES = [
+  { icon: '🛡️', label: 'Lacrados e seminovos originais' },
+  { icon: '🧾', label: 'Nota fiscal' },
+  { icon: '🚚', label: 'Entrega em mãos' },
+]
+
 export function Hero() {
   const { content } = useHeroContent()
   const waLink = getWhatsAppLink('Oi Lucas! Vi seu site e queria consultar disponibilidade de um iPhone.')
+  const features = content.features && content.features.length > 0 ? content.features : DEFAULT_FEATURES
 
   return (
     <section className="mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-6 sm:pb-16 sm:pt-14 lg:px-8 lg:pb-24 lg:pt-16">
@@ -43,24 +50,28 @@ export function Hero() {
           </div>
 
           <dl className="mt-8 grid grid-cols-1 gap-3 text-xs text-ink-muted sm:grid-cols-3 sm:gap-4">
-            <div className="flex items-center gap-2">
-              <span aria-hidden>🛡️</span> Lacrados e seminovos originais
-            </div>
-            <div className="flex items-center gap-2">
-              <span aria-hidden>🧾</span> Nota fiscal
-            </div>
-            <div className="flex items-center gap-2">
-              <span aria-hidden>🚚</span> Entrega em mãos
-            </div>
+            {features.map((feature, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span aria-hidden>{feature.icon}</span> {feature.label}
+              </div>
+            ))}
           </dl>
         </div>
 
         {/* Imagem / social proof */}
         <div className="relative">
           <div className="aspect-[4/5] w-full max-w-md overflow-hidden rounded-3xl bg-gradient-to-br from-terracotta-light to-cream-soft shadow-lg sm:mx-auto lg:mx-0 lg:max-w-none">
-            <div className="flex h-full w-full items-center justify-center text-ink-muted">
-              <span className="text-sm">Foto do Lucas aqui</span>
-            </div>
+            {content.photo_url ? (
+              <img
+                src={content.photo_url}
+                alt="Lucas"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-ink-muted">
+                <span className="text-sm">Foto do Lucas aqui</span>
+              </div>
+            )}
           </div>
 
           <div className="absolute -bottom-5 left-4 rounded-2xl bg-white px-4 py-3 shadow-md sm:left-6">

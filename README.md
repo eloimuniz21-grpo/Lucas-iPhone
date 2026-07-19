@@ -49,12 +49,20 @@ checagem no frontend é só cosmética: a proteção de verdade é a RLS de cada
 tabela, que já bloqueia qualquer leitura/escrita de quem não está na
 allowlist, mesmo que a chamada venha direto da API sem passar pelo app.
 
-Páginas: Visão geral (KPIs rápidos — receita/custo/lucro do mês e de hoje,
-gráficos completos ficam para a próxima fase), Estoque (CRUD de aparelhos),
-Vendas (registra venda + marca o aparelho como vendido numa transação só,
-via função `register_sale`), Conteúdo do site (textos do hero/sobre,
-modelos em destaque com upload de foto, depoimentos com fluxo de
-rascunho → publicação manual).
+Páginas: Visão geral (KPIs do mês/hoje + gráficos: linha do tempo
+receita×custo×lucro dos últimos 30 dias, modelos mais vendidos, e perfil
+demográfico — sexo, idade, cidade — todos com legenda, tooltip no hover e
+alternância "Ver tabela" para acessibilidade), Estoque (CRUD de aparelhos,
+com upload de foto no cadastro/edição), Vendas (registra venda + marca o
+aparelho como vendido numa transação só, via função `register_sale`,
+incluindo idade/cidade opcionais do cliente), Conteúdo do site (textos do
+hero/sobre — incluindo foto do Lucas e os selos de confiança com ícone
+editáveis —, modelos em destaque com upload de foto, depoimentos com fluxo
+de rascunho → publicação manual).
+
+Os gráficos do dashboard usam uma paleta validada por script (contraste,
+daltonismo) — ver `apps/admin/src/components/charts/` e os tokens
+`--color-chart-*` em `apps/admin/src/index.css`.
 
 **Pendência de configuração manual (fora do alcance do Claude neste
 sandbox):** o provedor Google do Supabase Auth precisa de um OAuth Client
@@ -88,15 +96,22 @@ tabelas sensíveis têm RLS restrita a usuários na tabela `admins`. Bucket de
 storage `site-images` para fotos dos modelos (leitura pública, escrita só
 admin).
 
+## Dados fictícios da demo
+
+O estoque/vendas/depoimentos atuais têm dados fictícios (fotos placeholder
+geradas em `supabase/demo-assets/gen_placeholders.py`) só para a
+demonstração. Não existe script de reset automático — o próprio admin já
+tem um botão "Remover" em cada aparelho/modelo/depoimento cadastrado, então
+dá pra apagar os dados fictícios um a um por ali antes de cadastrar os
+aparelhos e vendas reais.
+
 ## Próximos passos
 
 1. Configurar o login Google no Supabase (ver seção acima) e popular
-   `public.admins` com Lucas e Eloi.
-2. Rodar o admin localmente, cadastrar o estoque real e testar o fluxo
-   completo de venda.
+   `public.admins` com Lucas e Eloi. (Já feito para eloimuniz21@gmail.com —
+   falta o primeiro login do Lucas.)
+2. Apagar os dados fictícios da demo (ver seção acima) e cadastrar o
+   estoque real.
 3. Retoques visuais no site público (fotos reais do Lucas e dos aparelhos,
-   número de WhatsApp real).
-4. Dashboard com gráficos completos: linha do tempo custo × receita × lucro,
-   mapa de calor de modelos, perfil demográfico dos clientes.
-5. Deploy: dois projetos Vercel separados (`apps/site` e `apps/admin`),
-   variáveis de ambiente isoladas em cada um.
+   número de WhatsApp real — hoje ainda usando o número atual, +55 81
+   8296-7311).
