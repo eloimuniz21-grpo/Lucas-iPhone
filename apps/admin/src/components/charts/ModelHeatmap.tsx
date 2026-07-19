@@ -6,13 +6,12 @@ export interface ModelCount {
   units: number
 }
 
-// Rampa sequencial (uma hue só, claro→escuro) validada pelo script da skill
-// de dataviz — mesma rampa "blue" documentada em palette.md.
+// Rampa sequencial (uma hue só, claro→escuro) nos tons do terracota da
+// marca, gerada a partir de --color-terracotta e validada com
+// validate_palette.js --ordinal (gaps de luminância + contraste mínimo).
 const SEQ_STEPS = [
   'var(--color-chart-seq-100)',
   'var(--color-chart-seq-200)',
-  'var(--color-chart-seq-300)',
-  'var(--color-chart-seq-400)',
   'var(--color-chart-seq-450)',
   'var(--color-chart-seq-500)',
   'var(--color-chart-seq-600)',
@@ -21,7 +20,7 @@ const SEQ_STEPS = [
 
 function stepFor(fraction: number) {
   const idx = Math.min(SEQ_STEPS.length - 1, Math.round(fraction * (SEQ_STEPS.length - 1)))
-  return { color: SEQ_STEPS[idx], light: idx < 4 }
+  return { color: SEQ_STEPS[idx], light: idx < 2 }
 }
 
 export function ModelHeatmap({ data }: { data: ModelCount[] }) {

@@ -92,8 +92,8 @@ const AGE_BRACKETS = [
 ]
 
 const AGE_ORDINAL_STEPS = [
+  'var(--color-chart-seq-100)',
   'var(--color-chart-seq-200)',
-  'var(--color-chart-seq-300)',
   'var(--color-chart-seq-450)',
   'var(--color-chart-seq-600)',
   'var(--color-chart-seq-700)',

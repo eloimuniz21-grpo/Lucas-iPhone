@@ -17,21 +17,26 @@
 
   /* Tokens dos gráficos do dashboard — paleta validada com o script
      validate_palette.js da skill de dataviz (checks de contraste e CVD).
-     Receita/Lucro formam o par categórico validado; Custo fica como linha
-     de contexto (cinza neutro), não competindo por identidade com as
-     outras duas. A rampa "seq" é sequencial (uma hue só, claro→escuro),
-     usada em magnitude (heatmap de modelos, idade, cidade). */
+     Receita/Lucro formam o par categórico validado (precisam de duas hues
+     bem distintas pra quem tem daltonismo conseguir diferenciar as duas
+     linhas — terracota+laranja não passa nesse teste, por isso Lucro fica
+     em azul). Custo fica como linha de contexto (cinza neutro), não
+     competindo por identidade com as outras duas.
+     A rampa "seq" é sequencial (uma hue só, claro→escuro) nos tons do
+     terracota da marca — usada em magnitude (heatmap de modelos, idade,
+     cidade), onde não há esse problema de distinguir séries por cor.
+     seq-450 é o próprio terracota da marca (mesmo hex de --color-terracotta),
+     os demais degraus foram gerados a partir dele em OKLCH e validados com
+     --ordinal (gaps de luminância e contraste mínimo). */
   --color-chart-receita: #c1662e;
   --color-chart-lucro: #2a78d6;
   --color-chart-custo: #6b6459;
-  --color-chart-seq-100: #cde2fb;
-  --color-chart-seq-200: #9ec5f4;
-  --color-chart-seq-300: #6da7ec;
-  --color-chart-seq-400: #3987e5;
-  --color-chart-seq-450: #2a78d6;
-  --color-chart-seq-500: #256abf;
-  --color-chart-seq-600: #184f95;
-  --color-chart-seq-700: #0d366b;
+  --color-chart-seq-100: #d1a690;
+  --color-chart-seq-200: #ca855f;
+  --color-chart-seq-450: #c1662e;
+  --color-chart-seq-500: #a9531a;
+  --color-chart-seq-600: #8b3f07;
+  --color-chart-seq-700: #6a2f05;
   --color-chart-grid: #e1e0d9;
   --color-chart-axis: #c3c2b7;
   --color-chart-muted: #898781;
