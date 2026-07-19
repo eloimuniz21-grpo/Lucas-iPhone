@@ -1,4 +1,5 @@
 import { useAuth } from '../lib/auth'
+import { LogoMark } from '../components/Logo'
 
 export function Login() {
   const { status, deniedEmail, signInWithGoogle, retryCheck } = useAuth()
@@ -6,7 +7,8 @@ export function Login() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream-soft px-4">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-        <p className="text-lg font-semibold text-ink">Lucas.iphones</p>
+        <LogoMark className="mx-auto h-12 w-12" />
+        <p className="mt-3 text-lg font-semibold text-ink">Vero</p>
         <p className="mt-1 text-sm text-ink-muted">Painel de gestão</p>
 
         {deniedEmail && (

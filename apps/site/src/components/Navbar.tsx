@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Logo } from './Logo'
 
 const LINKS = [
   { href: '#modelos', label: 'Modelos' },
@@ -18,8 +19,8 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-cream/90 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <a href="#" className="text-lg font-semibold tracking-tight text-ink">
-          Lucas.iphones
+        <a href="#" aria-label="Vero — início">
+          <Logo />
         </a>
 
         {/* Nav desktop */}

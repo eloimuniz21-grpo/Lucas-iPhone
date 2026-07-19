@@ -1,6 +1,6 @@
-# Lucas.iphones
+# Vero
 
-Landing page + painel de gestão para o Lucas, vendedor de iPhones com atendimento pessoal.
+Landing page + painel de gestão da Vero (marca do Lucas, vendedor de iPhones com atendimento pessoal). Nome escolhido pra remeter a "verdadeiro/autêntico" — a maior objeção de quem compra iPhone usado.
 
 Documentação de arquitetura completa: peça o arquivo `ARQUITETURA.md` gerado junto com este repositório, ou veja o histórico da conversa com o Claude. Resumo rápido abaixo.
 

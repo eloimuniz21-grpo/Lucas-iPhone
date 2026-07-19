@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { Logo, LogoMark } from './Logo'
 
 const NAV = [
   { to: '/', label: 'Visão geral', end: true },
@@ -22,7 +23,10 @@ export function Layout() {
 
       {/* Topbar mobile */}
       <header className="flex items-center justify-between border-b border-border bg-card px-4 py-3 lg:hidden">
-        <span className="text-sm font-semibold text-ink">Lucas.iphones — Admin</span>
+        <span className="inline-flex items-center gap-2">
+          <LogoMark className="h-6 w-6" />
+          <span className="text-sm font-semibold text-ink">Vero — Admin</span>
+        </span>
         <button
           type="button"
           onClick={() => setMobileNavOpen((v) => !v)}
@@ -68,8 +72,8 @@ function SidebarContent({
     <div className={compact ? 'py-2' : 'flex h-full flex-col p-5'}>
       {!compact && (
         <div className="mb-6">
-          <p className="text-sm font-semibold text-ink">Lucas.iphones</p>
-          <p className="text-xs text-ink-muted">Painel de gestão</p>
+          <Logo />
+          <p className="mt-1 text-xs text-ink-muted">Painel de gestão</p>
         </div>
       )}
 
