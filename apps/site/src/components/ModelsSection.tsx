@@ -1,9 +1,33 @@
+import { useEffect, useRef, useState } from 'react'
 import { useSiteModels } from '../lib/hooks'
 import { getWhatsAppLink } from '../lib/whatsapp'
 import { trackEvent } from '../lib/analytics'
 
 export function ModelsSection() {
   const { models, loading } = useSiteModels()
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [atStart, setAtStart] = useState(true)
+  const [atEnd, setAtEnd] = useState(true)
+
+  function updateEdges() {
+    const el = scrollRef.current
+    if (!el) return
+    setAtStart(el.scrollLeft <= 4)
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4)
+  }
+
+  useEffect(() => {
+    updateEdges()
+    window.addEventListener('resize', updateEdges)
+    return () => window.removeEventListener('resize', updateEdges)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [models, loading])
+
+  function scrollByPage(direction: 1 | -1) {
+    const el = scrollRef.current
+    if (!el) return
+    el.scrollBy({ left: direction * el.clientWidth * 0.85, behavior: 'smooth' })
+  }
 
   return (
     <section id="modelos" className="border-t border-border bg-cream-soft/60">
@@ -17,33 +41,70 @@ export function ModelsSection() {
               Selecionados a dedo.
             </h2>
           </div>
-          <a
-            href={getWhatsAppLink('Oi Lucas! Quero ver o estoque completo de iPhones. 📱') ?? '#'}
-            target="_blank"
-            rel="noreferrer"
-            onClick={() => trackEvent('whatsapp_click', { model: null, source: 'ver_estoque_completo' })}
-            className="text-sm font-semibold text-terracotta-dark underline-offset-4 hover:underline"
-          >
-            Ver estoque completo →
-          </a>
+
+          <div className="flex items-center gap-4">
+            {models.length > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label="Ver modelos anteriores"
+                  onClick={() => scrollByPage(-1)}
+                  disabled={atStart}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-ink transition-colors hover:border-ink/30 disabled:opacity-30"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m15 18-6-6 6-6" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="Ver mais modelos"
+                  onClick={() => scrollByPage(1)}
+                  disabled={atEnd}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-card text-ink transition-colors hover:border-ink/30 disabled:opacity-30"
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m9 18 6-6-6-6" />
+                  </svg>
+                </button>
+              </div>
+            )}
+            <a
+              href={getWhatsAppLink('Oi Lucas! Quero ver o estoque completo de iPhones. 📱') ?? '#'}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackEvent('whatsapp_click', { model: null, source: 'ver_estoque_completo' })}
+              className="shrink-0 text-sm font-semibold text-terracotta-dark underline-offset-4 hover:underline"
+            >
+              Ver estoque completo →
+            </a>
+          </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {!loading && models.length === 0 && (
+          <p className="mt-8 text-sm text-ink-muted">
+            Modelos em destaque aparecerão aqui assim que forem cadastrados no painel.
+          </p>
+        )}
+
+        {/* Trilho horizontal em vez de grade — evita que a seção cresça
+         * verticalmente sem fim conforme mais modelos são cadastrados.
+         * Scroll nativo (arrasta/roda no touch) + setas de apoio no
+         * cabeçalho; barra de rolagem nativa escondida por estética. */}
+        <div
+          ref={scrollRef}
+          onScroll={updateEdges}
+          className="mt-8 flex gap-5 overflow-x-auto scroll-smooth snap-x snap-mandatory pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
           {loading &&
             Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-80 animate-pulse rounded-2xl bg-cream-soft" />
+              <div key={i} className="h-80 w-64 shrink-0 animate-pulse rounded-2xl bg-cream-soft sm:w-72" />
             ))}
-
-          {!loading && models.length === 0 && (
-            <p className="text-sm text-ink-muted sm:col-span-2 lg:col-span-3">
-              Modelos em destaque aparecerão aqui assim que forem cadastrados no painel.
-            </p>
-          )}
 
           {models.map((model) => (
             <article
               key={model.id}
-              className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+              className="flex w-64 shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm sm:w-72"
             >
               <div className="relative aspect-square w-full bg-gradient-to-br from-cream-soft to-white">
                 {model.tag && (
