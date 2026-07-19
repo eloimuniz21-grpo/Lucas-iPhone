@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  /* Mesma paleta do site público, para manter identidade visual —
+     mas aqui o layout é de ferramenta interna (sidebar), não marketing. */
+  --color-cream: #f7f3ec;
+  --color-cream-soft: #efe9de;
+  --color-ink: #1c1a17;
+  --color-ink-muted: #6b6459;
+  --color-terracotta: #c1662e;
+  --color-terracotta-dark: #a4531f;
+  --color-terracotta-light: #f3ddc4;
+  --color-card: #ffffff;
+  --color-border: #e7e0d3;
+  --color-danger: #b3432f;
+  --color-success: #4d7c4a;
+
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-cream-soft text-ink font-sans;
+  }
+}
