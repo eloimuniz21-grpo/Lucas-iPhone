@@ -8,7 +8,7 @@ export function AboutSection() {
     { value: stats.clients, label: 'Clientes atendidos' },
     { value: stats.years, label: 'De experiência' },
     { value: stats.sealed_pct, label: 'Aparelhos lacrados' },
-    { value: stats.delivery, label: 'Entrega em SP capital' },
+    { value: stats.delivery, label: 'Entrega em Recife e região' },
   ]
 
   return (

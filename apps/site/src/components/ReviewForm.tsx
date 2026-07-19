@@ -59,7 +59,7 @@ export function ReviewForm() {
 
   return (
     <form onSubmit={handleSubmit} className="mt-8 max-w-xl rounded-2xl border border-border bg-card p-5 sm:p-6">
-      <h3 className="text-sm font-semibold text-ink">Comprou com o Lucas? Deixe sua avaliação ✍️</h3>
+      <h3 className="text-sm font-semibold text-ink">Comprou com a gente? Deixe sua avaliação ✍️</h3>
 
       <div className="mt-4 space-y-3">
         {/* honeypot anti-spam — invisível e inalcançável por teclado pra
