@@ -9,6 +9,7 @@ interface AuthContextValue {
   session: Session | null
   deniedEmail: string | null
   signInWithGoogle: () => Promise<void>
+  signInWithEmail: (email: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   retryCheck: () => void
 }
@@ -100,6 +101,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }
 
+  // Login nativo por link mágico (sem senha) — alternativa ao Google que
+  // não depende da lista de "test users" do Google Cloud (o app OAuth
+  // ainda está em modo Testing). A barreira de segurança real continua
+  // sendo is_admin()/RLS: isso só troca COMO a pessoa prova quem é, não
+  // muda quem tem acesso depois de provar.
+  async function signInWithEmail(email: string) {
+    setDeniedEmail(null)
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    })
+    return { error: error ? error.message : null }
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
     setSession(null)
@@ -111,7 +126,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ status, session, deniedEmail, signInWithGoogle, signOut, retryCheck }}>
+    <AuthContext.Provider
+      value={{ status, session, deniedEmail, signInWithGoogle, signInWithEmail, signOut, retryCheck }}
+    >
       {children}
     </AuthContext.Provider>
   )

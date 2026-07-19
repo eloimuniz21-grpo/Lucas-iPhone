@@ -34,6 +34,29 @@ function formatDateShort(iso: string) {
   return `${d}/${m}`
 }
 
+/** Curva suave passando por todos os pontos (Catmull-Rom → Bézier cúbica).
+ * Troca os segmentos retos por curvas — só estética (a leitura dos valores
+ * continua exata nos próprios pontos, só o traço entre eles fica curvo). */
+function smoothPath(points: { x: number; y: number }[]) {
+  if (points.length === 0) return ''
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`
+  if (points.length === 2) return `M ${points[0].x} ${points[0].y} L ${points[1].x} ${points[1].y}`
+
+  let d = `M ${points[0].x} ${points[0].y}`
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i]
+    const p1 = points[i]
+    const p2 = points[i + 1]
+    const p3 = points[i + 2] ?? p2
+    const cp1x = p1.x + (p2.x - p0.x) / 6
+    const cp1y = p1.y + (p2.y - p0.y) / 6
+    const cp2x = p2.x - (p3.x - p1.x) / 6
+    const cp2y = p2.y - (p3.y - p1.y) / 6
+    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`
+  }
+  return d
+}
+
 export function LineAreaChart({ data }: { data: DailyPoint[] }) {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
@@ -48,12 +71,16 @@ export function LineAreaChart({ data }: { data: DailyPoint[] }) {
   const xAt = (i: number) => PAD_LEFT + (data.length === 1 ? plotWidth / 2 : (i / (data.length - 1)) * plotWidth)
   const yAt = (v: number) => PAD_TOP + plotHeight - (v / maxVal) * plotHeight
 
+  function pointsFor(key: 'revenue' | 'cost' | 'profit') {
+    return data.map((d, i) => ({ x: xAt(i), y: yAt(d[key]) }))
+  }
+
   function pathFor(key: 'revenue' | 'cost' | 'profit') {
-    return data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xAt(i)} ${yAt(d[key])}`).join(' ')
+    return smoothPath(pointsFor(key))
   }
 
   function areaFor(key: 'revenue' | 'cost' | 'profit') {
-    const line = data.map((d, i) => `${i === 0 ? 'M' : 'L'} ${xAt(i)} ${yAt(d[key])}`).join(' ')
+    const line = smoothPath(pointsFor(key))
     return `${line} L ${xAt(data.length - 1)} ${yAt(0)} L ${xAt(0)} ${yAt(0)} Z`
   }
 

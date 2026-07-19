@@ -1,8 +1,27 @@
+import { useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { LogoMark } from '../components/Logo'
 
 export function Login() {
-  const { status, deniedEmail, signInWithGoogle, retryCheck } = useAuth()
+  const { status, deniedEmail, signInWithGoogle, signInWithEmail, retryCheck } = useAuth()
+  const [showEmailForm, setShowEmailForm] = useState(false)
+  const [email, setEmail] = useState('')
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
+
+  async function handleSendLink() {
+    if (!email.trim()) return
+    setSending(true)
+    setEmailError(null)
+    const { error } = await signInWithEmail(email.trim())
+    setSending(false)
+    if (error) {
+      setEmailError('Não consegui enviar o link agora. Confere o e-mail e tenta de novo.')
+      return
+    }
+    setSent(true)
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-cream-soft px-4">
@@ -59,6 +78,52 @@ export function Login() {
             </svg>
             {status === 'checking-admin' ? 'Verificando acesso…' : 'Entrar com Google'}
           </button>
+        )}
+
+        {status !== 'error' && (
+          <div className="mt-4">
+            {!showEmailForm && !sent && (
+              <button
+                type="button"
+                onClick={() => setShowEmailForm(true)}
+                className="text-xs font-medium text-ink-muted underline-offset-4 hover:text-ink hover:underline"
+              >
+                Prefere entrar com e-mail?
+              </button>
+            )}
+
+            {showEmailForm && !sent && (
+              <div className="mt-2 rounded-xl border border-border bg-cream-soft/60 p-4 text-left">
+                <p className="text-xs font-medium text-ink">Entrar com link por e-mail</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  Sem senha — a gente manda um link de acesso pro seu e-mail.
+                </p>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seu@email.com"
+                  className="mt-3 w-full rounded-lg border border-border px-3 py-2 text-sm focus:border-terracotta focus:outline-none"
+                />
+                {emailError && <p className="mt-2 text-xs text-danger">{emailError}</p>}
+                <button
+                  type="button"
+                  onClick={handleSendLink}
+                  disabled={sending || !email.trim()}
+                  className="mt-3 w-full rounded-full bg-terracotta px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {sending ? 'Enviando…' : 'Enviar link de acesso'}
+                </button>
+              </div>
+            )}
+
+            {sent && (
+              <div className="mt-2 rounded-xl border border-success/30 bg-success/10 p-4 text-sm text-success">
+                Link enviado! Confere sua caixa de entrada (e o spam) em{' '}
+                <span className="font-semibold">{email}</span> e clica no link pra entrar.
+              </div>
+            )}
+          </div>
         )}
 
         <p className="mt-6 text-xs text-ink-muted">
