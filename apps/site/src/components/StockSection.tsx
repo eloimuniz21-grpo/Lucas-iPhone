@@ -71,7 +71,7 @@ export function StockSection() {
 
           {groups.map((group) => {
             const waLink = getWhatsAppLink(
-              `Oi Lucas! 👋 Vi que você tem ${group.model} disponível no site, ainda dá pra garantir? 📱`,
+              `Oi Lucas! Vi que você tem ${group.model} disponível no site, ainda dá pra garantir? 📱`,
             )
             return (
               <article

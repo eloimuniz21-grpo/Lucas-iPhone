@@ -2,7 +2,7 @@ import { getWhatsAppLink } from '../lib/whatsapp'
 import { trackEvent } from '../lib/analytics'
 
 export function WhatsAppButton() {
-  const link = getWhatsAppLink('Oi Lucas! 👋 Vim pelo site e queria falar com você. 😊')
+  const link = getWhatsAppLink('Oi Lucas! Vim pelo site e queria falar com você. 😊')
   if (!link) return null
 
   return (

@@ -10,7 +10,7 @@ const DEFAULT_FEATURES = [
 
 export function Hero() {
   const { content } = useHeroContent()
-  const waLink = getWhatsAppLink('Oi Lucas! 👋 Vi seu site e queria consultar disponibilidade de um iPhone. 📱')
+  const waLink = getWhatsAppLink('Oi Lucas! Vi seu site e queria consultar disponibilidade de um iPhone. 📱')
   const features = content.features && content.features.length > 0 ? content.features : DEFAULT_FEATURES
 
   return (
