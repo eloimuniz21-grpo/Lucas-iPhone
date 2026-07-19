@@ -24,7 +24,10 @@ export function ModelsSection() {
             </h2>
           </div>
           <a
-            href="#estoque"
+            href={getWhatsAppLink('Oi Lucas! Quero ver o estoque completo de iPhones. 📱') ?? '#'}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => trackEvent('whatsapp_click', { model: null, source: 'ver_estoque_completo' })}
             className="text-sm font-semibold text-terracotta-dark underline-offset-4 hover:underline"
           >
             Ver estoque completo →

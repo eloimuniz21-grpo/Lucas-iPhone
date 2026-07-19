@@ -41,17 +41,3 @@ export interface Testimonial {
   model_bought: string | null
   display_order: number
 }
-
-export type DeviceCondition = 'lacrado' | 'seminovo'
-
-/** Espelha public.available_devices — uma view que expõe só as colunas
- * seguras do estoque real (nunca cost_price/imei). Ver migração 0006. */
-export interface AvailableDevice {
-  id: string
-  model: string
-  storage_gb: number | null
-  color: string | null
-  condition: DeviceCondition | null
-  photo_url: string | null
-  created_at: string
-}

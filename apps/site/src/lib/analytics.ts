@@ -2,7 +2,7 @@ import { supabase } from './supabase'
 
 const SESSION_KEY = 'vero_session_id'
 
-export type SiteEventType = 'session_start' | 'whatsapp_click' | 'stock_view' | 'review_submit'
+export type SiteEventType = 'session_start' | 'whatsapp_click' | 'review_submit'
 
 /** Um id anônimo por aba/sessão de navegação — não é PII, só agrupa eventos
  * da mesma visita. Guardado em sessionStorage (não localStorage) então some

@@ -3,7 +3,6 @@ import { Logo } from './Logo'
 
 const LINKS = [
   { href: '#modelos', label: 'Modelos' },
-  { href: '#estoque', label: 'Estoque' },
   { href: '#sobre', label: 'Sobre' },
   { href: '#depoimentos', label: 'Depoimentos' },
 ]

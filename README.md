@@ -29,21 +29,25 @@ diretamente do Supabase via `@supabase/supabase-js`, usando somente a chave
 `anon`/`publishable` — a proteção dos dados sensíveis (custo, IMEI, vendas)
 fica inteiramente a cargo das políticas de RLS do banco, não do frontend.
 
-Seções: Hero, Modelos em destaque (vitrine de marketing), **Estoque real**
-(`#estoque` — modelos efetivamente disponíveis agora, agrupados por modelo,
-lidos de `public.available_devices`, sem preço/custo), Sobre, Depoimentos
+Seções: Hero, Modelos em destaque (vitrine de marketing), Sobre, Depoimentos
 (com **formulário público de avaliação** — todo envio entra como rascunho e
 só aparece no site depois que o Lucas aprova pela aba Depoimentos do admin).
 
+> Havia uma seção de "Estoque real" (`#estoque`, lendo `public.available_devices`)
+> mostrando os modelos efetivamente disponíveis agora, agrupados por modelo.
+> Removida a pedido do Lucas — a contagem por modelo ("1 disponível") passava
+> a impressão de estoque pequeno. A view `public.available_devices` continua
+> existindo no banco (não faz mal ficar sem uso), caso essa ideia volte num
+> formato diferente no futuro.
+
 Mensagens de WhatsApp personalizadas com emojis em todos os pontos de
-contato (Hero, modelos, estoque, depoimentos, botão flutuante).
+contato (Hero, modelos, depoimentos, botão flutuante).
 
 **Analytics de leads** (`src/lib/analytics.ts`): cada visita gera um
 `session_id` anônimo (sessionStorage) e dispara `session_start` uma vez por
 sessão; cliques em qualquer CTA de WhatsApp disparam `whatsapp_click` (com
-modelo e origem); a seção de estoque dispara `stock_view` quando entra na
-tela; o formulário de avaliação dispara `review_submit`. Tudo vai pra
-`public.site_events`, que só admin consegue ler (insert é público,
+modelo e origem); o formulário de avaliação dispara `review_submit`. Tudo
+vai pra `public.site_events`, que só admin consegue ler (insert é público,
 select não).
 
 Requisitos de UX seguidos: mobile-first, menu hamburguer no mobile, botão de
