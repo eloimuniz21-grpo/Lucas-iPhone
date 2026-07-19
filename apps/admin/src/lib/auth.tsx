@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 
-type AuthStatus = 'loading' | 'signed-out' | 'checking-admin' | 'admin' | 'denied'
+type AuthStatus = 'loading' | 'signed-out' | 'checking-admin' | 'admin' | 'denied' | 'error'
 
 interface AuthContextValue {
   status: AuthStatus
@@ -10,17 +10,30 @@ interface AuthContextValue {
   deniedEmail: string | null
   signInWithGoogle: () => Promise<void>
   signOut: () => Promise<void>
+  retryCheck: () => void
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [session, setSession] = useState<Session | null>(null)
   const [deniedEmail, setDeniedEmail] = useState<string | null>(null)
 
+  // Evita que duas checagens concorrentes (getSession + onAuthStateChange
+  // disparando quase juntos, comum logo após o redirect do OAuth) apliquem
+  // resultados fora de ordem — só o resultado da checagem mais recente conta.
+  const requestId = useRef(0)
+
   async function checkAdminAndSet(nextSession: Session | null) {
+    const myRequestId = ++requestId.current
+
     if (!nextSession) {
+      if (myRequestId !== requestId.current) return
       setSession(null)
       setStatus('signed-out')
       return
@@ -30,12 +43,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // A allowlist de verdade é a RLS no banco — esta chamada é só pra
     // decidir o que mostrar na tela (não é a barreira de segurança).
-    const { data, error } = await supabase.rpc('is_admin')
+    // Tenta 2x: um erro passageiro de rede/API não pode ser tratado como
+    // "acesso negado" e derrubar a sessão do usuário.
+    let data: boolean | null = null
+    let error: unknown = null
 
-    if (error || !data) {
-      // Autenticado no Google, mas não está na tabela public.admins.
-      // Desloga imediatamente: não faz sentido manter uma sessão "presa"
-      // sem acesso a nada.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await supabase.rpc('is_admin')
+      data = res.data
+      error = res.error
+      if (!error) break
+      await sleep(600)
+    }
+
+    if (myRequestId !== requestId.current) return // uma checagem mais nova já assumiu
+
+    if (error) {
+      // Erro de verdade (rede, API fora do ar, etc) — mantém a sessão e
+      // deixa a pessoa tentar de novo, em vez de deslogar por engano.
+      setStatus('error')
+      return
+    }
+
+    if (!data) {
+      // Chamada funcionou, resposta é clara: esse e-mail não está na
+      // allowlist. Aí sim faz sentido encerrar a sessão.
       setDeniedEmail(nextSession.user.email ?? null)
       await supabase.auth.signOut()
       setSession(null)
@@ -74,8 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setStatus('signed-out')
   }
 
+  function retryCheck() {
+    supabase.auth.getSession().then(({ data }) => checkAdminAndSet(data.session))
+  }
+
   return (
-    <AuthContext.Provider value={{ status, session, deniedEmail, signInWithGoogle, signOut }}>
+    <AuthContext.Provider value={{ status, session, deniedEmail, signInWithGoogle, signOut, retryCheck }}>
       {children}
     </AuthContext.Provider>
   )
