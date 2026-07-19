@@ -136,16 +136,14 @@ export function ModelosTab() {
                 onChange={(e) => updateModel(model.id, { label: e.target.value })}
                 className="w-full rounded-lg border border-border px-2.5 py-1.5 text-sm font-medium focus:border-terracotta focus:outline-none"
               />
-              <select
+              <input
                 value={model.tag ?? ''}
                 onChange={(e) => updateModel(model.id, { tag: e.target.value || null })}
+                list="model-tag-suggestions"
+                placeholder="Selo (opcional) — ex: Lançamento"
+                maxLength={24}
                 className="w-full rounded-lg border border-border bg-white px-2.5 py-1.5 text-xs focus:border-terracotta focus:outline-none"
-              >
-                <option value="">Sem selo</option>
-                <option value="lançamento">Lançamento</option>
-                <option value="mais vendido">Mais vendido</option>
-                <option value="melhor custo">Melhor custo</option>
-              </select>
+              />
             </div>
 
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
@@ -163,6 +161,14 @@ export function ModelosTab() {
           </div>
         ))}
       </div>
+
+      {/* Sugestões pro campo de selo — não trava em nenhuma delas, o admin
+       * pode digitar qualquer texto curto. */}
+      <datalist id="model-tag-suggestions">
+        <option value="Lançamento" />
+        <option value="Mais vendido" />
+        <option value="Melhor custo" />
+      </datalist>
     </div>
   )
 }

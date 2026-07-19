@@ -2,12 +2,6 @@ import { useSiteModels } from '../lib/hooks'
 import { getWhatsAppLink } from '../lib/whatsapp'
 import { trackEvent } from '../lib/analytics'
 
-const TAG_LABELS: Record<string, string> = {
-  lançamento: 'Lançamento',
-  'mais vendido': 'Mais vendido',
-  'melhor custo': 'Melhor custo',
-}
-
 export function ModelsSection() {
   const { models, loading } = useSiteModels()
 
@@ -54,7 +48,7 @@ export function ModelsSection() {
               <div className="relative aspect-square w-full bg-gradient-to-br from-cream-soft to-white">
                 {model.tag && (
                   <span className="absolute left-3 top-3 rounded-full bg-terracotta px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-                    {TAG_LABELS[model.tag] ?? model.tag}
+                    {model.tag}
                   </span>
                 )}
                 {model.photo_url ? (
