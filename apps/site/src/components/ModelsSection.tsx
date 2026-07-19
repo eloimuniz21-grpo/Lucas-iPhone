@@ -1,5 +1,6 @@
 import { useSiteModels } from '../lib/hooks'
 import { getWhatsAppLink } from '../lib/whatsapp'
+import { trackEvent } from '../lib/analytics'
 
 const TAG_LABELS: Record<string, string> = {
   lançamento: 'Lançamento',
@@ -23,7 +24,7 @@ export function ModelsSection() {
             </h2>
           </div>
           <a
-            href={getWhatsAppLink('Oi Lucas! Quero ver o estoque completo de iPhones.') ?? '#'}
+            href="#estoque"
             className="text-sm font-semibold text-terracotta-dark underline-offset-4 hover:underline"
           >
             Ver estoque completo →
@@ -71,11 +72,12 @@ export function ModelsSection() {
                 <h3 className="text-base font-semibold text-ink sm:text-lg">{model.label}</h3>
                 <a
                   href={
-                    getWhatsAppLink(`Oi Lucas! Tenho interesse no ${model.label}, ainda tem disponível?`) ??
+                    getWhatsAppLink(`Oi Lucas! 📲 Tenho interesse no ${model.label}, ainda tem disponível?`) ??
                     '#'
                   }
                   target="_blank"
                   rel="noreferrer"
+                  onClick={() => trackEvent('whatsapp_click', { model: model.label, source: 'modelos' })}
                   className="mt-auto inline-flex items-center justify-center rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ink/90"
                 >
                   Consultar disponibilidade

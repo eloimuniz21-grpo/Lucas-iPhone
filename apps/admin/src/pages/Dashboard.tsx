@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { ChartCard } from '../components/charts/ChartCard'
+import { ChartCard, EmptyState } from '../components/charts/ChartCard'
 import { LineAreaChart, LineAreaTable, type DailyPoint } from '../components/charts/LineAreaChart'
 import { ModelHeatmap, ModelHeatmapTable, type ModelCount } from '../components/charts/ModelHeatmap'
 import { AgeBars, CityBars, DemographicsTable, GenderBar, type DemographicsInput } from '../components/charts/Demographics'
 import { DateRangeFilter, rangeLabel, type DateRange } from '../components/charts/DateRangeFilter'
+import { SessionsChart, SessionsTable, type SessionPoint } from '../components/charts/SessionsChart'
 import type { ClientGender } from '../lib/types'
 
 interface DailyRow {
@@ -24,7 +25,13 @@ interface RawSaleRow {
   device: { model: string; cost_price: number } | { model: string; cost_price: number }[] | null
 }
 
+interface SiteEventRow {
+  event_type: string
+  created_at: string
+}
+
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
+const integer = new Intl.NumberFormat('pt-BR')
 
 function todayIso() {
   return new Date().toISOString().slice(0, 10)
@@ -78,6 +85,30 @@ function fillDailySeries(rows: DailyRow[], startIso: string, endIso: string): Da
   return out
 }
 
+/** Agrega os eventos brutos (um por linha) em contagem diária de sessões e
+ * cliques no WhatsApp, preenchendo os dias sem eventos com zero. */
+function fillSessionsSeries(rows: SiteEventRow[], startIso: string, endIso: string): SessionPoint[] {
+  const counts = new Map<string, { sessions: number; whatsapp_clicks: number }>()
+  for (const row of rows) {
+    const date = row.created_at.slice(0, 10)
+    const entry = counts.get(date) ?? { sessions: 0, whatsapp_clicks: 0 }
+    if (row.event_type === 'session_start') entry.sessions += 1
+    else if (row.event_type === 'whatsapp_click') entry.whatsapp_clicks += 1
+    counts.set(date, entry)
+  }
+
+  const out: SessionPoint[] = []
+  let cursor = startIso
+  let guard = 0
+  while (cursor <= endIso && guard < 3660) {
+    const entry = counts.get(cursor)
+    out.push({ date: cursor, sessions: entry?.sessions ?? 0, whatsapp_clicks: entry?.whatsapp_clicks ?? 0 })
+    cursor = addDaysIso(cursor, 1)
+    guard++
+  }
+  return out
+}
+
 function firstDevice(device: RawSaleRow['device']) {
   if (!device) return null
   return Array.isArray(device) ? device[0] ?? null : device
@@ -92,6 +123,7 @@ export function Dashboard() {
   const [dailySeries, setDailySeries] = useState<DailyPoint[]>([])
   const [modelCounts, setModelCounts] = useState<ModelCount[]>([])
   const [demographics, setDemographics] = useState<DemographicsInput[]>([])
+  const [sessionSeries, setSessionSeries] = useState<SessionPoint[]>([])
   const [range, setRange] = useState<DateRange>({ kind: 'preset', days: 30, label: 'Últimos 30 dias' })
 
   useEffect(() => {
@@ -107,7 +139,10 @@ export function Dashboard() {
         const startIso = startOfMonth.toISOString().slice(0, 10)
         const { start: windowStartIso, end: windowEndIso } = rangeToWindow(range)
 
-        const [stockRes, monthFinancialsRes, windowFinancialsRes, rawSalesRes] = await Promise.all([
+        const eventsStartIso = `${windowStartIso}T00:00:00.000Z`
+        const eventsEndIso = `${addDaysIso(windowEndIso, 1)}T00:00:00.000Z`
+
+        const [stockRes, monthFinancialsRes, windowFinancialsRes, rawSalesRes, siteEventsRes] = await Promise.all([
           supabase.from('devices').select('id', { count: 'exact', head: true }).eq('status', 'em_estoque'),
           supabase.from('daily_financials').select('*').gte('sale_date', startIso).order('sale_date'),
           supabase
@@ -121,6 +156,11 @@ export function Dashboard() {
             .select('sale_date, sale_price, client_gender, client_age, client_city, device:devices(model, cost_price)')
             .gte('sale_date', windowStartIso)
             .lte('sale_date', windowEndIso),
+          supabase
+            .from('site_events')
+            .select('event_type, created_at')
+            .gte('created_at', eventsStartIso)
+            .lt('created_at', eventsEndIso),
         ])
 
         if (!active) return
@@ -129,6 +169,10 @@ export function Dashboard() {
         if (monthFinancialsRes.error) throw monthFinancialsRes.error
         if (windowFinancialsRes.error) throw windowFinancialsRes.error
         if (rawSalesRes.error) throw rawSalesRes.error
+        // site_events é best-effort: se a tabela ainda não tiver sido criada
+        // (ou a query falhar por qualquer motivo), o resto do dashboard não
+        // deve quebrar — só o card de sessões fica vazio.
+        if (siteEventsRes.error) console.error('Falha ao carregar site_events:', siteEventsRes.error)
 
         setStockCount(stockRes.count ?? 0)
         setMonthRows((monthFinancialsRes.data ?? []) as DailyRow[])
@@ -146,6 +190,10 @@ export function Dashboard() {
 
         setDemographics(
           rawSales.map((s) => ({ gender: s.client_gender, age: s.client_age, city: s.client_city })),
+        )
+
+        setSessionSeries(
+          fillSessionsSeries((siteEventsRes.data ?? []) as SiteEventRow[], windowStartIso, windowEndIso),
         )
       } catch (err) {
         console.error(err)
@@ -176,6 +224,19 @@ export function Dashboard() {
     }),
     { revenue: 0, cost: 0, profit: 0, units: 0 },
   )
+
+  const sessionTotals = sessionSeries.reduce(
+    (acc, s) => ({ sessions: acc.sessions + s.sessions, whatsapp_clicks: acc.whatsapp_clicks + s.whatsapp_clicks }),
+    { sessions: 0, whatsapp_clicks: 0 },
+  )
+  const conversionRate = sessionTotals.sessions > 0 ? (sessionTotals.whatsapp_clicks / sessionTotals.sessions) * 100 : null
+  const sessionsSubtitle = [
+    `${integer.format(sessionTotals.sessions)} sessões`,
+    `${integer.format(sessionTotals.whatsapp_clicks)} cliques no WhatsApp`,
+    conversionRate !== null ? `conversão de ${conversionRate.toFixed(1)}%` : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   return (
     <div>
@@ -256,6 +317,18 @@ export function Dashboard() {
               table={<ModelHeatmapTable data={modelCounts} />}
             >
               <ModelHeatmap data={modelCounts} />
+            </ChartCard>
+
+            <ChartCard
+              title="Sessões & cliques no WhatsApp"
+              subtitle={sessionTotals.sessions === 0 ? `Sem dados de visita ainda — ${rangeLabel(range)}` : `${sessionsSubtitle} — ${rangeLabel(range)}`}
+              table={<SessionsTable data={sessionSeries} />}
+            >
+              {sessionTotals.sessions === 0 ? (
+                <EmptyState message="Ainda não há visitas registradas no site nesse período." />
+              ) : (
+                <SessionsChart data={sessionSeries} />
+              )}
             </ChartCard>
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

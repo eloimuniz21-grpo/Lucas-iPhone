@@ -1,18 +1,26 @@
+import { useEffect } from 'react'
 import { Navbar } from './components/Navbar'
 import { Hero } from './components/Hero'
 import { ModelsSection } from './components/ModelsSection'
+import { StockSection } from './components/StockSection'
 import { AboutSection } from './components/AboutSection'
 import { TestimonialsSection } from './components/TestimonialsSection'
 import { Footer } from './components/Footer'
 import { WhatsAppButton } from './components/WhatsAppButton'
+import { trackSessionStart } from './lib/analytics'
 
 function App() {
+  useEffect(() => {
+    trackSessionStart()
+  }, [])
+
   return (
     <div className="min-h-screen bg-cream">
       <Navbar />
       <main>
         <Hero />
         <ModelsSection />
+        <StockSection />
         <AboutSection />
         <TestimonialsSection />
       </main>

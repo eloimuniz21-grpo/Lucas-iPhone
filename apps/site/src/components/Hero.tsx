@@ -1,5 +1,6 @@
 import { useHeroContent } from '../lib/hooks'
 import { getWhatsAppLink } from '../lib/whatsapp'
+import { trackEvent } from '../lib/analytics'
 
 const DEFAULT_FEATURES = [
   { icon: '🛡️', label: 'Lacrados e seminovos originais' },
@@ -9,7 +10,7 @@ const DEFAULT_FEATURES = [
 
 export function Hero() {
   const { content } = useHeroContent()
-  const waLink = getWhatsAppLink('Oi Lucas! Vi seu site e queria consultar disponibilidade de um iPhone.')
+  const waLink = getWhatsAppLink('Oi Lucas! 👋 Vi seu site e queria consultar disponibilidade de um iPhone. 📱')
   const features = content.features && content.features.length > 0 ? content.features : DEFAULT_FEATURES
 
   return (
@@ -36,6 +37,7 @@ export function Hero() {
               target={waLink ? '_blank' : undefined}
               rel={waLink ? 'noreferrer' : undefined}
               aria-disabled={!waLink}
+              onClick={() => trackEvent('whatsapp_click', { model: null, source: 'hero' })}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-terracotta px-6 py-3.5 text-sm font-semibold text-white shadow-sm transition-transform active:scale-[0.98] sm:hover:bg-terracotta-dark"
             >
               Consultar disponibilidade

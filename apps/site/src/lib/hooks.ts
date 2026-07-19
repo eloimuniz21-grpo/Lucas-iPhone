@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase'
-import type { AboutContent, HeroContent, SiteModel, StatsContent, Testimonial } from './types'
+import type { AboutContent, AvailableDevice, HeroContent, SiteModel, StatsContent, Testimonial } from './types'
+import { trackEvent, type SiteEventType } from './analytics'
 
 /**
  * Busca uma seção de public.site_content pela chave e já aplica um valor
@@ -138,4 +139,72 @@ export function useTestimonials() {
   }, [])
 
   return { testimonials, loading }
+}
+
+/** Estoque real (public.available_devices) — modelos efetivamente
+ * disponíveis agora, sem preço nem custo, diferente da vitrine de
+ * marketing (site_models). */
+export function useAvailableDevices() {
+  const [devices, setDevices] = useState<AvailableDevice[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+
+    async function load() {
+      try {
+        const { data, error } = await supabase
+          .from('available_devices')
+          .select('*')
+          .order('created_at', { ascending: false })
+
+        if (!active) return
+        if (!error && data) setDevices(data as AvailableDevice[])
+      } catch (err) {
+        console.error('Falha ao buscar available_devices:', err)
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
+    load()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  return { devices, loading }
+}
+
+/** Dispara um evento de analytics uma única vez, quando o elemento
+ * referenciado entra na viewport (ex: "chegou a ver a seção de estoque"). */
+export function useTrackOnceVisible<T extends HTMLElement>(eventType: SiteEventType, metadata?: Record<string, unknown>) {
+  const ref = useRef<T | null>(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+
+    let fired = false
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (fired) return
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            fired = true
+            trackEvent(eventType, metadata)
+            observer.disconnect()
+            break
+          }
+        }
+      },
+      { threshold: 0.3 },
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventType])
+
+  return ref
 }

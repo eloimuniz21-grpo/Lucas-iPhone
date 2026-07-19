@@ -1,7 +1,8 @@
 import { getWhatsAppLink } from '../lib/whatsapp'
+import { trackEvent } from '../lib/analytics'
 
 export function WhatsAppButton() {
-  const link = getWhatsAppLink('Oi Lucas! Vim pelo site e queria falar com você.')
+  const link = getWhatsAppLink('Oi Lucas! 👋 Vim pelo site e queria falar com você. 😊')
   if (!link) return null
 
   return (
@@ -9,6 +10,7 @@ export function WhatsAppButton() {
       href={link}
       target="_blank"
       rel="noreferrer"
+      onClick={() => trackEvent('whatsapp_click', { model: null, source: 'botao_flutuante' })}
       aria-label="Falar no WhatsApp"
       className="fixed bottom-5 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-transform active:scale-95 sm:bottom-6 sm:right-6"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
