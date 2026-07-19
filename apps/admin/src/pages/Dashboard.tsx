@@ -4,6 +4,7 @@ import { ChartCard } from '../components/charts/ChartCard'
 import { LineAreaChart, LineAreaTable, type DailyPoint } from '../components/charts/LineAreaChart'
 import { ModelHeatmap, ModelHeatmapTable, type ModelCount } from '../components/charts/ModelHeatmap'
 import { AgeBars, CityBars, DemographicsTable, GenderBar, type DemographicsInput } from '../components/charts/Demographics'
+import { DateRangeFilter, rangeLabel, type DateRange } from '../components/charts/DateRangeFilter'
 import type { ClientGender } from '../lib/types'
 
 interface DailyRow {
@@ -24,7 +25,10 @@ interface RawSaleRow {
 }
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-const WINDOW_DAYS = 30
+
+function todayIso() {
+  return new Date().toISOString().slice(0, 10)
+}
 
 function isoDaysAgo(days: number) {
   const d = new Date()
@@ -32,19 +36,44 @@ function isoDaysAgo(days: number) {
   return d.toISOString().slice(0, 10)
 }
 
-/** Preenche os dias sem venda com zero, pra linha do tempo ficar contínua. */
-function fillDailySeries(rows: DailyRow[], days: number): DailyPoint[] {
+function isoToUtcDate(iso: string) {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(Date.UTC(y, m - 1, d))
+}
+
+function addDaysIso(iso: string, days: number) {
+  const d = isoToUtcDate(iso)
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Converte o filtro selecionado (preset ou personalizado) num intervalo
+ * [start, end] de datas ISO, usado tanto na query quanto no preenchimento
+ * da série. */
+function rangeToWindow(range: DateRange): { start: string; end: string } {
+  if (range.kind === 'preset') {
+    return { start: isoDaysAgo(range.days - 1), end: todayIso() }
+  }
+  return { start: range.start, end: range.end }
+}
+
+/** Preenche os dias sem venda com zero, pra linha do tempo ficar contínua,
+ * cobrindo qualquer intervalo (não só "últimos N dias terminando hoje"). */
+function fillDailySeries(rows: DailyRow[], startIso: string, endIso: string): DailyPoint[] {
   const byDate = new Map(rows.map((r) => [r.sale_date, r]))
   const out: DailyPoint[] = []
-  for (let i = days - 1; i >= 0; i--) {
-    const date = isoDaysAgo(i)
-    const row = byDate.get(date)
+  let cursor = startIso
+  let guard = 0
+  while (cursor <= endIso && guard < 3660) {
+    const row = byDate.get(cursor)
     out.push({
-      date,
+      date: cursor,
       revenue: row ? Number(row.revenue) : 0,
       cost: row ? Number(row.cost) : 0,
       profit: row ? Number(row.profit) : 0,
     })
+    cursor = addDaysIso(cursor, 1)
+    guard++
   }
   return out
 }
@@ -56,31 +85,42 @@ function firstDevice(device: RawSaleRow['device']) {
 
 export function Dashboard() {
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [stockCount, setStockCount] = useState(0)
   const [monthRows, setMonthRows] = useState<DailyRow[]>([])
   const [dailySeries, setDailySeries] = useState<DailyPoint[]>([])
   const [modelCounts, setModelCounts] = useState<ModelCount[]>([])
   const [demographics, setDemographics] = useState<DemographicsInput[]>([])
+  const [range, setRange] = useState<DateRange>({ kind: 'preset', days: 30, label: 'Últimos 30 dias' })
 
   useEffect(() => {
     let active = true
+    const isFirstLoad = loading
 
     async function load() {
       try {
+        if (!isFirstLoad) setRefreshing(true)
+
         const startOfMonth = new Date()
         startOfMonth.setDate(1)
         const startIso = startOfMonth.toISOString().slice(0, 10)
-        const windowStartIso = isoDaysAgo(WINDOW_DAYS - 1)
+        const { start: windowStartIso, end: windowEndIso } = rangeToWindow(range)
 
         const [stockRes, monthFinancialsRes, windowFinancialsRes, rawSalesRes] = await Promise.all([
           supabase.from('devices').select('id', { count: 'exact', head: true }).eq('status', 'em_estoque'),
           supabase.from('daily_financials').select('*').gte('sale_date', startIso).order('sale_date'),
-          supabase.from('daily_financials').select('*').gte('sale_date', windowStartIso).order('sale_date'),
+          supabase
+            .from('daily_financials')
+            .select('*')
+            .gte('sale_date', windowStartIso)
+            .lte('sale_date', windowEndIso)
+            .order('sale_date'),
           supabase
             .from('sales')
             .select('sale_date, sale_price, client_gender, client_age, client_city, device:devices(model, cost_price)')
-            .gte('sale_date', windowStartIso),
+            .gte('sale_date', windowStartIso)
+            .lte('sale_date', windowEndIso),
         ])
 
         if (!active) return
@@ -92,7 +132,7 @@ export function Dashboard() {
 
         setStockCount(stockRes.count ?? 0)
         setMonthRows((monthFinancialsRes.data ?? []) as DailyRow[])
-        setDailySeries(fillDailySeries((windowFinancialsRes.data ?? []) as DailyRow[], WINDOW_DAYS))
+        setDailySeries(fillDailySeries((windowFinancialsRes.data ?? []) as DailyRow[], windowStartIso, windowEndIso))
 
         const rawSales = (rawSalesRes.data ?? []) as RawSaleRow[]
 
@@ -111,7 +151,10 @@ export function Dashboard() {
         console.error(err)
         if (active) setError('Não consegui carregar os números agora. Tenta recarregar a página.')
       } finally {
-        if (active) setLoading(false)
+        if (active) {
+          setLoading(false)
+          setRefreshing(false)
+        }
       }
     }
 
@@ -119,10 +162,11 @@ export function Dashboard() {
     return () => {
       active = false
     }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [range.kind === 'preset' ? `p${range.days}` : `c${range.start}_${range.end}`])
 
-  const todayIso = new Date().toISOString().slice(0, 10)
-  const today = monthRows.find((r) => r.sale_date === todayIso)
+  const todayIsoValue = todayIso()
+  const today = monthRows.find((r) => r.sale_date === todayIsoValue)
   const monthTotals = monthRows.reduce(
     (acc, r) => ({
       revenue: acc.revenue + Number(r.revenue),
@@ -136,7 +180,7 @@ export function Dashboard() {
   return (
     <div>
       <h1 className="text-xl font-semibold text-ink sm:text-2xl">Visão geral</h1>
-      <p className="mt-1 text-sm text-ink-muted">Resumo do mês e desempenho dos últimos {WINDOW_DAYS} dias.</p>
+      <p className="mt-1 text-sm text-ink-muted">Resumo do mês e desempenho no período selecionado abaixo.</p>
 
       {error && (
         <div className="mt-4 rounded-lg border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
@@ -186,32 +230,45 @@ export function Dashboard() {
 
       {!loading && (
         <div className="mt-6 space-y-6">
-          <ChartCard
-            title={`Desempenho — últimos ${WINDOW_DAYS} dias`}
-            subtitle="Receita, custo e lucro por dia"
-            table={<LineAreaTable data={dailySeries} />}
-          >
-            <LineAreaChart data={dailySeries} />
-          </ChartCard>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold text-ink">Gráficos</h2>
+              <p className="text-xs text-ink-muted">O período abaixo filtra tudo nesta seção</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {refreshing && <span className="text-xs text-ink-muted">Atualizando…</span>}
+              <DateRangeFilter value={range} onChange={setRange} />
+            </div>
+          </div>
 
-          <ChartCard
-            title="Modelos mais vendidos"
-            subtitle={`Unidades vendidas nos últimos ${WINDOW_DAYS} dias`}
-            table={<ModelHeatmapTable data={modelCounts} />}
-          >
-            <ModelHeatmap data={modelCounts} />
-          </ChartCard>
+          <div className={`space-y-6 transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
+            <ChartCard
+              title="Desempenho"
+              subtitle={`Receita, custo e lucro — ${rangeLabel(range)}`}
+              table={<LineAreaTable data={dailySeries} />}
+            >
+              <LineAreaChart data={dailySeries} />
+            </ChartCard>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <ChartCard title="Sexo" table={<DemographicsTable rows={demographics} />}>
-              <GenderBar rows={demographics} />
+            <ChartCard
+              title="Modelos mais vendidos"
+              subtitle={`Unidades vendidas — ${rangeLabel(range)}`}
+              table={<ModelHeatmapTable data={modelCounts} />}
+            >
+              <ModelHeatmap data={modelCounts} />
             </ChartCard>
-            <ChartCard title="Idade" table={<DemographicsTable rows={demographics} />}>
-              <AgeBars rows={demographics} />
-            </ChartCard>
-            <ChartCard title="Localidade" table={<DemographicsTable rows={demographics} />}>
-              <CityBars rows={demographics} />
-            </ChartCard>
+
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+              <ChartCard title="Sexo" table={<DemographicsTable rows={demographics} />}>
+                <GenderBar rows={demographics} />
+              </ChartCard>
+              <ChartCard title="Idade" table={<DemographicsTable rows={demographics} />}>
+                <AgeBars rows={demographics} />
+              </ChartCard>
+              <ChartCard title="Localidade" table={<DemographicsTable rows={demographics} />}>
+                <CityBars rows={demographics} />
+              </ChartCard>
+            </div>
           </div>
         </div>
       )}
